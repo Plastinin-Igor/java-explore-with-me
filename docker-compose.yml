@@ -1,9 +1,8 @@
-version: '3.8'
 services:
   stats-server:
     restart: on-failure
     build:
-      context: ./stats/stats-server
+      context: stats/stats-server
       dockerfile: Dockerfile
     container_name: "ewm-stats-server"
     ports:
@@ -27,7 +26,7 @@ services:
   ewm-service:
     restart: on-failure
     build:
-      context: ./main-service
+      context: main-service
       dockerfile: Dockerfile
     image: ewm-main-service
     container_name: "ewm-main-service"
