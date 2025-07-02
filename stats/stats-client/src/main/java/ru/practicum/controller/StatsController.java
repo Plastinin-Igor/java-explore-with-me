@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.RequestCreateDto;
-import ru.practicum.client.StatsClient;
+import ru.practicum.client.StatClient;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -20,7 +20,7 @@ import java.util.List;
 @Validated
 public class StatsController {
 
-    private final StatsClient statsClient;
+    private final StatClient statsClient;
 
 
     @PostMapping("/hit")
