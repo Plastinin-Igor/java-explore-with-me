@@ -34,3 +34,5 @@ services:
     container_name: "ewm-main-service"
     ports:
       - "8080:8080"
+    environment:
+      - STATS_SERVER_URL=http://ewm-stats-server:9090
