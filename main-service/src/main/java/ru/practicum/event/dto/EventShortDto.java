@@ -1,0 +1,49 @@
+package ru.practicum.event.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.Length;
+import ru.practicum.category.dto.CategoryDto;
+import ru.practicum.user.dto.UserShortDto;
+
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class EventShortDto {
+
+    @NotNull
+    @NotBlank
+    @Length(min = 20, max = 2000)
+    private String annotation;
+
+    @NotNull
+    private CategoryDto category;
+
+    @Positive
+    private int confirmedRequests;
+
+    @NotNull
+    private LocalDateTime eventDate;
+
+    @NotNull
+    private Long id;
+
+    @NotNull
+    private UserShortDto initiator;
+
+    @NotNull
+    private boolean paid;
+
+    @NotNull
+    @NotBlank
+    private String title;
+
+    private int views;
+
+}

@@ -36,5 +36,19 @@ services:
       - "8080:8080"
     depends_on:
       - stats-server
+      - main-db
     environment:
       - STATS_SERVER_URL=http://ewm-stats-server:9090
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://main-db:5432/main-db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=root
+
+  main-db:
+    image: postgres:14-alpine
+    container_name: "main-db"
+    ports:
+      - "6542:5432"
+    environment:
+      - POSTGRES_DB=main_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
