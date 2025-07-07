@@ -18,7 +18,7 @@ public final class StatsRequestMapper {
 
     public static RequestDto toRequestDto(Request request) {
         RequestDto requestDto = new RequestDto();
-        requestDto.setIp(request.getIp());
+        requestDto.setId(request.getId());
         requestDto.setApp(request.getApp());
         requestDto.setUri(request.getUri());
         requestDto.setIp(request.getIp());
