@@ -1,6 +1,7 @@
 package ru.practicum.exception;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -42,11 +43,26 @@ public class ServerExceptionHandler {
                 ex.getMessage(), LocalDateTime.now());
     }
 
-    // Обработка всех остальных исключений
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse handleGeneralException(Exception ex) {
-        return new ErrorResponse("INTERNAL_SERVER_ERROR", "Internal server error.",
-                "Внутренняя ошибка сервера; " + ex.getMessage(), LocalDateTime.now());
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleMethodArgumentNotValidException(final MethodArgumentNotValidException ex) {
+        return new ErrorResponse("BAD_REQUEST", "Validation failed for argument.",
+                ex.getMessage(), LocalDateTime.now());
     }
+
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleConstraintViolationException(final ConstraintViolationException ex) {
+        return new ErrorResponse("CONFLICT", "Integrity constraint has been violated.",
+                "could not execute statement; ", LocalDateTime.now());
+    }
+
+    // Обработка всех остальных исключений
+//    @ExceptionHandler(Exception.class)
+//    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+//    public ErrorResponse handleGeneralException(Exception ex) {
+//        return new ErrorResponse("INTERNAL_SERVER_ERROR", "Internal server error.",
+//                "Внутренняя ошибка сервера; " + ex.getMessage(), LocalDateTime.now());
+//    }
 }

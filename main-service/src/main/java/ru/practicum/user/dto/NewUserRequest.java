@@ -11,6 +11,7 @@ import org.hibernate.validator.constraints.Length;
 @NoArgsConstructor
 public class NewUserRequest {
 
+    @Length(min = 6, max = 254)
     @NotBlank
     @Email
     private String email;
