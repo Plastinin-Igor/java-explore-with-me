@@ -38,7 +38,7 @@ public class EventShortDto {
     private UserShortDto initiator;
 
     @NotNull
-    private boolean paid;
+    private Boolean paid;
 
     @NotNull
     @NotBlank

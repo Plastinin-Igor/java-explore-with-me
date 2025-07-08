@@ -1,5 +1,6 @@
 package ru.practicum.event.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,6 +33,7 @@ public class Event {
     private String description;
 
     @Column(name = "event_date")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
     @ManyToOne
@@ -41,7 +43,7 @@ public class Event {
     private Boolean paid;
 
     @Column(name = "participant_limit")
-    private Long participantLimit;
+    private int participantLimit;
 
     @Column(name = "request_moderation")
     private Boolean requestModeration;
@@ -49,6 +51,7 @@ public class Event {
     private String title;
 
     @Column(name = "created_on")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdOn;
 
     @ManyToOne
@@ -56,9 +59,11 @@ public class Event {
     private User initiator;
 
     @Column(name = "published_on")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime publishedOn;
 
+    @Enumerated(EnumType.STRING)
     private State state;
 
-    private Long views;
+    private int views;
 }
