@@ -20,4 +20,5 @@ public interface EventService {
 
     List<EventShortDto> getEventsByFilterSearch(EventSearchParameters parameters);
 
+    EventFullDto getEventById(Long eventId);
 }

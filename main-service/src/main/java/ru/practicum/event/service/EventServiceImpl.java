@@ -72,7 +72,7 @@ public class EventServiceImpl implements EventService {
         if (event == null) {
             log.error("Событие с id {} и пользователем {} не найдено в системе.", eventId, userId);
             throw new NotFoundException("Событие с id " + eventId + " и пользователем "
-                                        + userId + " не найдено в системе");
+                    + userId + " не найдено в системе");
         }
 
         return EventMapper.toEventFullDto(event);
@@ -85,7 +85,7 @@ public class EventServiceImpl implements EventService {
         Event oldEvent = getEvent(eventId);
         if (oldEvent.getState().equals(State.PUBLISHED)) {
             throw new DataConflictException("Изменить можно только отмененные события или события в состоянии " +
-                                            "ожидания модерации.");
+                    "ожидания модерации.");
         }
 
         if (!userId.equals(user.getId())) {
@@ -133,9 +133,8 @@ public class EventServiceImpl implements EventService {
         if (params.getOnlyAvailable() != null && params.getOnlyAvailable()) {
             specifications.add(EventSpecifications.onlyAvailableEvent());
         }
-
         // Только опубликованные события
-
+        specifications.add(EventSpecifications.onlyPublishedEvent(State.PUBLISHED));
 
         // Режим сортировки
         Sort sort = Sort.unsorted();
@@ -149,10 +148,21 @@ public class EventServiceImpl implements EventService {
 
         Specification<Event> combinedSpecs = EventSpecifications.combine(specifications);
         Pageable paging = PageRequest.of(params.getFrom() / params.getSize(), params.getSize(), sort);
+
+        //TODO добавить вызов статистики
+
         return eventRepository.findAll(combinedSpecs, paging)
                 .stream()
                 .map(EventMapper::toEventShortDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public EventFullDto getEventById(Long eventId) {
+
+        //TODO добавить вызов статистики
+
+        return EventMapper.toEventFullDto(getEvent(eventId));
     }
 
     private User getUser(Long userId) {

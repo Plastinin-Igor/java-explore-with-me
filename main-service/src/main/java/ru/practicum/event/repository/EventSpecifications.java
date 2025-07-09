@@ -3,6 +3,7 @@ package ru.practicum.event.repository;
 import org.springframework.data.jpa.domain.Specification;
 import ru.practicum.event.model.Event;
 import jakarta.persistence.criteria.Predicate;
+import ru.practicum.event.model.State;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -52,6 +53,12 @@ public final class EventSpecifications {
                 criteriaBuilder.le(event.get("confirmedRequests"), event.get("participantLimit")),
                 criteriaBuilder.le(event.get("participantLimit"), 0)
         );
+    }
+
+    // только опубликованные события
+    public static Specification<Event> onlyPublishedEvent(State state) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("state"), state);
     }
 
     public static Specification<Event> combine(List<Specification<Event>> specs) {

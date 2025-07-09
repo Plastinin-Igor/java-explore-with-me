@@ -36,9 +36,9 @@ public class EventControllerPrivate {
     public EventFullDto addEvent(@PathVariable Long userId,
                                  @RequestBody @Valid NewEventDto newEventDto) {
         log.info("Поступил запрос POST:  /users/{}/events на добавление события {}.", userId, newEventDto);
-        EventFullDto EventFullDto = eventService.addEvent(userId, newEventDto);
-        log.info("Событие {} успешно добавлено в систему.", EventFullDto);
-        return EventFullDto;
+        EventFullDto eventFullDto = eventService.addEvent(userId, newEventDto);
+        log.info("Событие {} успешно добавлено в систему.", eventFullDto);
+        return eventFullDto;
     }
 
     @GetMapping("/{userId}/events/{eventId}")
