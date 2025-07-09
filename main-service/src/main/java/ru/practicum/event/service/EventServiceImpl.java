@@ -3,7 +3,9 @@ package ru.practicum.event.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.event.dto.EventFullDto;
@@ -12,9 +14,11 @@ import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.dto.UpdateEventUserRequest;
 import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.Event;
+import ru.practicum.event.model.EventSearchParameters;
 import ru.practicum.event.model.State;
 import ru.practicum.event.model.StateAction;
 import ru.practicum.event.repository.EventRepository;
+import ru.practicum.event.repository.EventSpecifications;
 import ru.practicum.exception.DataConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.exception.ParameterNotValidException;
@@ -25,6 +29,7 @@ import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -102,6 +107,54 @@ public class EventServiceImpl implements EventService {
         return EventMapper.toEventFullDto(eventRepository.save(newevent));
     }
 
+    @Override
+    public List<EventShortDto> getEventsByFilterSearch(EventSearchParameters params) {
+        List<Specification<Event>> specifications = new ArrayList<>();
+
+        // Текст
+        if (params.getText() != null && !params.getText().isBlank()) {
+            specifications.add(EventSpecifications.withText(params.getText()));
+        }
+        // Категории
+        if (params.getCategories() != null && params.getCategories().isEmpty()) {
+            specifications.add(EventSpecifications.inCategories(params.getCategories()));
+        }
+        // Платные/бесплатные события
+        if (params.getPaid() != null) {
+            specifications.add(EventSpecifications.isPaid(params.getPaid()));
+        }
+        // Период
+        if (params.getRangeStart() != null && params.getRangeEnd() != null) {
+            specifications.add(EventSpecifications.betweenPeriod(params.getRangeStart(), params.getRangeEnd()));
+        } else {
+            specifications.add(EventSpecifications.laterCurrentDateTime(LocalDateTime.now()));
+        }
+        // Только события у которых не исчерпан лимит запросов на участие
+        if (params.getOnlyAvailable() != null && params.getOnlyAvailable()) {
+            specifications.add(EventSpecifications.onlyAvailableEvent());
+        }
+
+        // Только опубликованные события
+
+
+        // Режим сортировки
+        Sort sort = Sort.unsorted();
+        if (params.getSort() != null) {
+            switch (params.getSort()) {
+                case "EVENT_DATE" -> Sort.by(Sort.Direction.ASC, "eventDate");
+                case "VIEWS" -> Sort.by(Sort.Direction.ASC, "viewsCount");
+            }
+            ;
+        }
+
+        Specification<Event> combinedSpecs = EventSpecifications.combine(specifications);
+        Pageable paging = PageRequest.of(params.getFrom() / params.getSize(), params.getSize(), sort);
+        return eventRepository.findAll(combinedSpecs, paging)
+                .stream()
+                .map(EventMapper::toEventShortDto)
+                .collect(Collectors.toList());
+    }
+
     private User getUser(Long userId) {
         return userRepository.findById(userId).orElseThrow(() ->
                 new NotFoundException("Пользователь с id " + userId + " не найден в системе."));
@@ -109,7 +162,7 @@ public class EventServiceImpl implements EventService {
 
     private Event getEvent(Long eventId) {
         return eventRepository.findById(eventId).orElseThrow(() ->
-                new NotFoundException("Событие с id " + eventId + " не найдено в системе"));
+                new NotFoundException("Событие с id " + eventId + " не найдено в системе."));
     }
 
     private void checkDateTime(LocalDateTime newEventDate) {

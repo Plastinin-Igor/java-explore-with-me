@@ -1,5 +1,6 @@
 package ru.practicum.request.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,13 +17,14 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ParticipationRequest {
+public class Request {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "created")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime created;
 
     @ManyToOne
@@ -34,5 +36,5 @@ public class ParticipationRequest {
     private User requester;
 
     @Enumerated(EnumType.STRING)
-    private StatusParticipationRequest status;
+    private StatusRequest status;
 }

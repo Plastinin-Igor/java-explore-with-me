@@ -1,5 +1,5 @@
 package ru.practicum.request.model;
 
-public enum StatusParticipationRequest {
+public enum StatusRequest {
     PENDING, CONFIRMED, REJECTED
 }

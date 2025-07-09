@@ -4,6 +4,7 @@ import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.dto.UpdateEventUserRequest;
+import ru.practicum.event.model.EventSearchParameters;
 
 import java.util.List;
 
@@ -17,5 +18,6 @@ public interface EventService {
 
     EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest updateEventUserRequest);
 
+    List<EventShortDto> getEventsByFilterSearch(EventSearchParameters parameters);
 
 }

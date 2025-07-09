@@ -31,7 +31,7 @@ public class CategoryControllerAdmin {
     @DeleteMapping("/{catId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCategory(@PathVariable Long catId) {
-        log.info("Получен запрос DELETE: /admin/categories{}", catId);
+        log.info("Получен запрос DELETE: /admin/categories/{}", catId);
         categoryService.deleteCategory(catId);
         log.info("Категория с id: {} успешно удалена из системы.", catId);
     }
