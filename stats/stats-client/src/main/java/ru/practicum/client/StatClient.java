@@ -8,13 +8,14 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.RequestCreateDto;
+import ru.practicum.RequestDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class StatClient extends BaseClient {
-    private static final String API_PREFIX = "/";
+    private static final String API_PREFIX = "";
 
     @Autowired
     public StatClient(@Value("${stats-server.url}") String serverUrl, RestTemplateBuilder builder) {
@@ -26,9 +27,11 @@ public class StatClient extends BaseClient {
         );
     }
 
-    public ResponseEntity<Object> addRequest(RequestCreateDto requestCreateDto) {
-        return post("hit", requestCreateDto);
+    public RequestDto addRequest(RequestCreateDto requestCreateDto) {
+        ResponseEntity<RequestDto> responseEntity = this.post("/hit", requestCreateDto, new RequestDto());
+        return responseEntity.getBody();
     }
+
 
     public ResponseEntity<Object> getStatsRequest(LocalDateTime start, LocalDateTime end,
                                                   List<String> uris, Boolean unique) {
