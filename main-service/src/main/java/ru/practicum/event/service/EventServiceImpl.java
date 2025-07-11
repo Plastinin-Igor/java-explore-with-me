@@ -55,7 +55,7 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventFullDto addEvent(Long userId, NewEventDto newEventDto) {
-        checkDateTime(newEventDto.getEventDate());
+        checkDateTime(newEventDto.getEventDate(), 2);
         Event event = EventMapper.toEventFromNewEventDto(newEventDto);
         event.setInitiator(getUser(userId));
         event.setLocation(getLocation(LocationMapper.toLocation(newEventDto.getLocation())));
@@ -72,7 +72,7 @@ public class EventServiceImpl implements EventService {
         if (event == null) {
             log.error("Событие с id {} и пользователем {} не найдено в системе.", eventId, userId);
             throw new NotFoundException("Событие с id " + eventId + " и пользователем "
-                    + userId + " не найдено в системе");
+                                        + userId + " не найдено в системе");
         }
 
         return EventMapper.toEventFullDto(event);
@@ -83,9 +83,10 @@ public class EventServiceImpl implements EventService {
     public EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest updateEventUserRequest) {
         User user = getUser(userId);
         Event oldEvent = getEvent(eventId);
+
         if (oldEvent.getState().equals(State.PUBLISHED)) {
             throw new DataConflictException("Изменить можно только отмененные события или события в состоянии " +
-                    "ожидания модерации.");
+                                            "ожидания модерации.");
         }
 
         if (!userId.equals(user.getId())) {
@@ -93,7 +94,7 @@ public class EventServiceImpl implements EventService {
         }
 
         Event newevent = EventMapper.toEventFromUpdateDto(updateEventUserRequest, oldEvent);
-        checkDateTime(newevent.getEventDate());
+        checkDateTime(newevent.getEventDate(), 2);
 
         if (updateEventUserRequest.getStateAction() != null) {
             if (updateEventUserRequest.getStateAction().equals(StateAction.CANCEL_REVIEW)) {
@@ -104,6 +105,9 @@ public class EventServiceImpl implements EventService {
                 newevent.setState(State.PENDING);
             }
         }
+
+        newevent.setLocation(getLocation(newevent.getLocation()));
+
         return EventMapper.toEventFullDto(eventRepository.save(newevent));
     }
 
@@ -158,6 +162,74 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public List<EventFullDto> getEventsByFilterSearchForAdmin(EventSearchParameters params) {
+        List<Specification<Event>> specifications = new ArrayList<>();
+
+        // Пользователи
+        if (params.getUsers() != null && !params.getUsers().isEmpty()) {
+            specifications.add(EventSpecifications.inUsers(params.getUsers()));
+        }
+        // Состояния
+        if (params.getStates() != null && !params.getStates().isEmpty()) {
+            specifications.add(EventSpecifications.inStates(params.getStates()));
+        }
+        // Категории
+        if (params.getCategories() != null && !params.getCategories().isEmpty()) {
+            specifications.add(EventSpecifications.inCategories(params.getCategories()));
+        }
+        // Период
+        if (params.getRangeStart() != null && params.getRangeEnd() != null) {
+            specifications.add(EventSpecifications.betweenPeriod(params.getRangeStart(), params.getRangeEnd()));
+        } else {
+            specifications.add(EventSpecifications.laterCurrentDateTime(LocalDateTime.now()));
+        }
+
+        Sort sort = Sort.unsorted();
+        Specification<Event> combinedSpecs = EventSpecifications.combine(specifications);
+        Pageable paging = PageRequest.of(params.getFrom() / params.getSize(), params.getSize(), sort);
+
+        return eventRepository.findAll(combinedSpecs, paging)
+                .stream()
+                .map(EventMapper::toEventFullDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public EventFullDto updateEventByAdmin(Long eventId, UpdateEventUserRequest updateEvent) {
+        Event oldEvent = getEvent(eventId);
+        Event newevent = EventMapper.toEventFromUpdateDto(updateEvent, oldEvent);
+
+        Location location = getLocation(newevent.getLocation());
+        newevent.setLocation(location);
+
+        // дата начала изменяемого события должна быть не ранее чем за час от даты публикации
+        checkDateTime(oldEvent.getEventDate(), 1);
+
+        if (updateEvent.getStateAction() != null) {
+            switch (updateEvent.getStateAction()) {
+                case PUBLISH_EVENT: // событие можно публиковать, только если оно в состоянии ожидания публикации
+                    if (oldEvent.getState().equals(State.PENDING)) {
+                        newevent.setState(State.PUBLISHED);
+                    } else {
+                        log.error("Событие можно публиковать, только если оно в состоянии ожидания публикации.");
+                        throw new DataConflictException("Событие можно публиковать, только если оно в состоянии ожидания публикации.");
+                    }
+                    break;
+                case CANCEL_REVIEW: // событие можно отклонить, только если оно еще не опубликовано
+                    if (!oldEvent.getState().equals(State.PUBLISHED)) {
+                        newevent.setState(State.CANCELED);
+                    } else {
+                        log.error("Событие можно отклонить, только если оно еще не опубликовано.");
+                        throw new DataConflictException("Событие можно отклонить, только если оно еще не опубликовано.");
+                    }
+                    break;
+            }
+        }
+        return EventMapper.toEventFullDto(eventRepository.save(newevent));
+    }
+
+    @Override
     public EventFullDto getEventById(Long eventId) {
 
         //TODO добавить вызов статистики
@@ -175,11 +247,12 @@ public class EventServiceImpl implements EventService {
                 new NotFoundException("Событие с id " + eventId + " не найдено в системе."));
     }
 
-    private void checkDateTime(LocalDateTime newEventDate) {
-        LocalDateTime twoHoursFromNow = LocalDateTime.now().plusHours(2);
+    private void checkDateTime(LocalDateTime newEventDate, int noEarlierThanAnHour) {
+        LocalDateTime hoursFromNow = LocalDateTime.now().plusHours(noEarlierThanAnHour);
 
-        if (newEventDate.isBefore(twoHoursFromNow)) {
-            String message = "Дата и время события не могут быть ранее, чем через два часа от текущего момента.";
+        if (newEventDate.isBefore(hoursFromNow)) {
+            String message = "Дата и время события не могут быть ранее, чем через "
+                             + noEarlierThanAnHour + " час(a) от текущего момента.";
             log.error(message);
             throw new ParameterNotValidException("EventDate", message);
         }

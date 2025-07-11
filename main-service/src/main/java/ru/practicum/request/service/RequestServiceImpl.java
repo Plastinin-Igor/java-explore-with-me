@@ -3,12 +3,15 @@ package ru.practicum.request.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.State;
 import ru.practicum.event.repository.EventRepository;
+import ru.practicum.event.service.EventService;
 import ru.practicum.exception.DataConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.request.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.request.dto.ParticipationRequestDto;
 import ru.practicum.request.mapper.RequestMapper;
 import ru.practicum.request.model.Request;
@@ -18,13 +21,18 @@ import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class RequestServiceImpl implements RequestService {
+
+    private final EventService eventService;
 
     private final RequestRepository requestRepository;
     private final UserRepository userRepository;
@@ -59,7 +67,7 @@ public class RequestServiceImpl implements RequestService {
             throw new DataConflictException("Нельзя участвовать в неопубликованном событии.");
         }
 
-        if (event.getParticipantLimit() >= requestRepository.countByEvent_Id(eventId)) {
+        if (requestRepository.countByEvent_Id(eventId) >= event.getParticipantLimit()) {
             log.error("У события с id {} достигнут лимит запросов на участие.", eventId);
             throw new DataConflictException("У события с id " + eventId + "  достигнут лимит запросов на участие.");
         }
@@ -108,8 +116,43 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    public EventRequestStatusUpdateRequest changeStatusRequest(Long userId, Long eventId, EventRequestStatusUpdateRequest request) {
-        return null;
+    @Transactional
+    public EventRequestStatusUpdateResult changeStatusRequest(Long userId,
+                                                              Long eventId,
+                                                              EventRequestStatusUpdateRequest updateRequest) {
+        getUser(userId);
+        Event event = getEvent(eventId);
+        List<Request> requests = requestRepository.findByEvent_Id(eventId);
+
+
+        int participantLimit = event.getParticipantLimit(); // Лимит
+        int quantityConfirmedRequest = event.getConfirmedRequests(); // Кол-во согласованных заявок
+
+        // Результаты
+        EventRequestStatusUpdateResult result = new EventRequestStatusUpdateResult();
+        List<ParticipationRequestDto> confirmedRequests = new ArrayList<>();
+        List<ParticipationRequestDto> rejectedRequests = new ArrayList<>();
+
+
+        for (Request request : requests) {
+            if (quantityConfirmedRequest > participantLimit) {
+                request.setStatus(StatusRequest.CONFIRMED);
+                confirmedRequests.add(RequestMapper.toRequestDto(request));
+                quantityConfirmedRequest++;
+            } else {
+                request.setStatus(StatusRequest.REJECTED);
+                rejectedRequests.add(RequestMapper.toRequestDto(request));
+            }
+        }
+
+        // Сохранить событие с обновленной информации о подтверждениях
+        event.setConfirmedRequests(quantityConfirmedRequest);
+        eventRepository.save(event);
+
+
+        result.setConfirmedRequests(confirmedRequests);
+        result.setRejectedRequests(rejectedRequests);
+        return result;
     }
 
     private User getUser(Long userId) {

@@ -21,4 +21,9 @@ public interface EventService {
     List<EventShortDto> getEventsByFilterSearch(EventSearchParameters parameters);
 
     EventFullDto getEventById(Long eventId);
+
+    List<EventFullDto> getEventsByFilterSearchForAdmin(EventSearchParameters parameters);
+
+    EventFullDto updateEventByAdmin(Long eventId, UpdateEventUserRequest updateEventUserRequest);
+
 }

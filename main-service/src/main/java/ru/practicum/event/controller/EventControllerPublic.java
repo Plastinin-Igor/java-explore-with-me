@@ -7,7 +7,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.RequestCreateDto;
 import ru.practicum.client.StatClient;
-import ru.practicum.RequestCreateDto;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.model.EventSearchParameters;
@@ -27,16 +26,17 @@ public class EventControllerPublic {
     private final StatClient statClient;
 
     @GetMapping("/events")
-    public List<EventShortDto> getEventsByFilterSearch(@RequestParam(name = "text", required = false) String text,
-                                                       @RequestParam(name = "categories", required = false) List<Long> categories,
-                                                       @RequestParam(name = "paid", required = false) Boolean paid,
-                                                       @RequestParam(name = "rangeStart", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
-                                                       @RequestParam(name = "rangeEnd", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
-                                                       @RequestParam(name = "onlyAvailable", required = false) Boolean onlyAvailable,
-                                                       @RequestParam(name = "sort", required = false) String sort,
-                                                       @RequestParam(name = "from", defaultValue = "0", required = false) Integer from,
-                                                       @RequestParam(name = "size", defaultValue = "10", required = false) Integer size,
-                                                       HttpServletRequest request) {
+    public List<EventShortDto> getEventsByFilterSearch(
+            @RequestParam(name = "text", required = false) String text,
+            @RequestParam(name = "categories", required = false) List<Long> categories,
+            @RequestParam(name = "paid", required = false) Boolean paid,
+            @RequestParam(name = "rangeStart", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
+            @RequestParam(name = "rangeEnd", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
+            @RequestParam(name = "onlyAvailable", required = false) Boolean onlyAvailable,
+            @RequestParam(name = "sort", required = false) String sort,
+            @RequestParam(name = "from", defaultValue = "0", required = false) Integer from,
+            @RequestParam(name = "size", defaultValue = "10", required = false) Integer size,
+            HttpServletRequest request) {
         EventSearchParameters parameters = EventSearchParameters
                 .builder()
                 .text(text)
@@ -58,7 +58,8 @@ public class EventControllerPublic {
         requestCreateDto.setUri(request.getRequestURI());
         requestCreateDto.setTimestamp(Timestamp.from(Instant.now()));
 
-        statClient.addRequest(requestCreateDto);
+        //TODO Сделать вызов статистики !
+        //statClient.addRequest(requestCreateDto);
 
         return eventService.getEventsByFilterSearch(parameters);
     }

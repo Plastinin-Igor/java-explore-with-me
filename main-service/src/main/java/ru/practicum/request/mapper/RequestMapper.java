@@ -31,7 +31,7 @@ public final class RequestMapper {
     public static ParticipationRequestDto toRequestDto(Request request) {
         ParticipationRequestDto requestDto = new ParticipationRequestDto();
         requestDto.setId(request.getId());
-        requestDto.setCreated(requestDto.getCreated());
+        requestDto.setCreated(request.getCreated());
         requestDto.setEvent(request.getEvent().getId());
         requestDto.setRequester(request.getRequester().getId());
         requestDto.setStatus(request.getStatus());

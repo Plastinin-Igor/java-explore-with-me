@@ -12,6 +12,18 @@ import java.util.List;
 
 public final class EventSpecifications {
 
+    // Список id пользователей, чьи события нужно найти
+    public static Specification<Event> inUsers(final List<Long> users) {
+        return (event, query, criteriaBuilder) ->
+                event.join("initiator").get("id").in(users);
+    }
+
+    // Список состояний в которых находятся искомые события
+    public static Specification<Event> inStates(final List<State> states) {
+        return (event, query, criteriaBuilder) ->
+                event.get("state").in(states);
+    }
+
     // Текст для поиска в содержимом аннотации и подробном описании события
     public static Specification<Event> withText(final String text) {
         return (event, query, criteriaBuilder) -> {
@@ -26,7 +38,7 @@ public final class EventSpecifications {
     // список идентификаторов категорий в которых будет вестись поиск
     public static Specification<Event> inCategories(final List<Long> categories) {
         return (event, query, criteriaBuilder) ->
-                event.get("category").in(categories);
+                event.join("category").get("id").in(categories);
     }
 
     // поиск только платных/бесплатных событий

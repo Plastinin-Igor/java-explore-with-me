@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.request.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.request.dto.ParticipationRequestDto;
 import ru.practicum.request.service.RequestService;
 
@@ -46,6 +48,15 @@ public class RequestControllerPrivate {
                                                                 @PathVariable Long eventId) {
         log.info("Получен запрос GET: /users/{}/events/{}/requests", userId, eventId);
         return requestService.getUserRequestsByEvent(userId, eventId);
+    }
+
+    @PatchMapping("/users/{userId}/events/{eventId}/requests")
+    public EventRequestStatusUpdateResult changeStatusRequest(@PathVariable Long userId,
+                                                              @PathVariable Long eventId,
+                                                              @RequestBody EventRequestStatusUpdateRequest requestsUpdate) {
+        log.info("Получен запрос PATCH: /users/{}/events/{}/requests для изменения статуса заявок: {}.",
+                userId, eventId, requestsUpdate);
+        return requestService.changeStatusRequest(userId, eventId, requestsUpdate);
     }
 
 }
