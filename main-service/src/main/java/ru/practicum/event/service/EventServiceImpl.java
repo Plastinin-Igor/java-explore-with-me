@@ -115,6 +115,12 @@ public class EventServiceImpl implements EventService {
     public List<EventShortDto> getEventsByFilterSearch(EventSearchParameters params) {
         List<Specification<Event>> specifications = new ArrayList<>();
 
+        if (params.getRangeStart() != null && params.getRangeEnd() != null
+            && params.getRangeStart().isAfter(params.getRangeEnd())) {
+            log.error("Дата RangeStart не может быть меньше даты getRangeEnd.");
+            throw new ParameterNotValidException("Даты", "Дата RangeStart не может быть меньше даты getRangeEnd.");
+        }
+
         // Текст
         if (params.getText() != null && !params.getText().isBlank()) {
             specifications.add(EventSpecifications.withText(params.getText()));
@@ -224,6 +230,13 @@ public class EventServiceImpl implements EventService {
                         throw new DataConflictException("Событие можно отклонить, только если оно еще не опубликовано.");
                     }
                     break;
+                case REJECT_EVENT: // Отмена события
+                    if (!oldEvent.getState().equals(State.PUBLISHED)) {
+                        newevent.setState(State.CANCELED);
+                    } else {
+                        log.error("Событие можно отменить, только если оно еще не опубликовано.");
+                        throw new DataConflictException("Событие можно отменить, только если оно еще не опубликовано.");
+                    }
             }
         }
         return EventMapper.toEventFullDto(eventRepository.save(newevent));
@@ -234,7 +247,12 @@ public class EventServiceImpl implements EventService {
 
         //TODO добавить вызов статистики
 
-        return EventMapper.toEventFullDto(getEvent(eventId));
+        Event event = getEvent(eventId);
+        if (event.getState() != State.PUBLISHED) {
+            log.error("Событие не опубликовано.");
+            throw new NotFoundException("Событие не опубликовано.");
+        }
+        return EventMapper.toEventFullDto(event);
     }
 
     private User getUser(Long userId) {

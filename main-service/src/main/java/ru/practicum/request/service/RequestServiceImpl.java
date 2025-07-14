@@ -22,9 +22,7 @@ import ru.practicum.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,7 +65,8 @@ public class RequestServiceImpl implements RequestService {
             throw new DataConflictException("Нельзя участвовать в неопубликованном событии.");
         }
 
-        if (requestRepository.countByEvent_Id(eventId) >= event.getParticipantLimit()) {
+        if (event.getParticipantLimit() > 0
+            && requestRepository.countByEvent_IdAndStatus(eventId, StatusRequest.CONFIRMED) >= event.getParticipantLimit()) {
             log.error("У события с id {} достигнут лимит запросов на участие.", eventId);
             throw new DataConflictException("У события с id " + eventId + "  достигнут лимит запросов на участие.");
         }
@@ -76,6 +75,10 @@ public class RequestServiceImpl implements RequestService {
             request.setStatus(StatusRequest.CONFIRMED);
         } else {
             request.setStatus(StatusRequest.PENDING);
+        }
+
+        if (event.getParticipantLimit() == 0) {
+            request.setStatus(StatusRequest.CONFIRMED);
         }
 
         request.setCreated(LocalDateTime.now());
@@ -133,9 +136,16 @@ public class RequestServiceImpl implements RequestService {
         List<ParticipationRequestDto> confirmedRequests = new ArrayList<>();
         List<ParticipationRequestDto> rejectedRequests = new ArrayList<>();
 
+        // нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие
+        if (quantityConfirmedRequest < participantLimit) {
+            log.error("Достигнут лимит по заявкам на событие с id {}.", event);
+            throw new DataConflictException("Достигнут лимит по заявкам на событие с id " + event);
+        }
+
+        // TODO Доделать согласование заявок !
 
         for (Request request : requests) {
-            if (quantityConfirmedRequest > participantLimit) {
+            if (quantityConfirmedRequest < participantLimit) {
                 request.setStatus(StatusRequest.CONFIRMED);
                 confirmedRequests.add(RequestMapper.toRequestDto(request));
                 quantityConfirmedRequest++;

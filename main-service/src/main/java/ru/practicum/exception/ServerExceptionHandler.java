@@ -58,11 +58,4 @@ public class ServerExceptionHandler {
                 "could not execute statement; ", LocalDateTime.now());
     }
 
-    // Обработка всех остальных исключений
-//    @ExceptionHandler(Exception.class)
-//    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-//    public ErrorResponse handleGeneralException(Exception ex) {
-//        return new ErrorResponse("INTERNAL_SERVER_ERROR", "Internal server error.",
-//                "Внутренняя ошибка сервера; " + ex.getMessage(), LocalDateTime.now());
-//    }
 }

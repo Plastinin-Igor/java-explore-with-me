@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.exception.DataConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.user.dto.NewUserRequest;
 import ru.practicum.user.dto.UserDto;
@@ -13,6 +14,7 @@ import ru.practicum.user.mapper.UserMapper;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,6 +45,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDto addUser(NewUserRequest newUserRequest) {
         User user = userRepository.save(UserMapper.toUserFromNewUser(newUserRequest));
+        emailUsageCheck(user.getEmail(), user.getId());
         return UserMapper.toUserDto(user);
     }
 
@@ -57,6 +60,16 @@ public class UserServiceImpl implements UserService {
     public User getUserById(Long userId) {
         return userRepository.findById(userId).orElseThrow(() ->
                 new NotFoundException("Пользователь с id: " + userId + " не найден в системе."));
+    }
+
+    private void emailUsageCheck(String email, Long userId) {
+        List<User> users = new ArrayList<>(userRepository.findAll());
+        for (User user : users) {
+            if (!userId.equals(user.getId()) && user.getEmail().equals(email)) {
+                log.error("Email {} уже используется в системе другим пользователем.", email);
+                throw new DataConflictException("Email " + email + " уже используется в системе другим пользователем.");
+            }
+        }
     }
 
 }

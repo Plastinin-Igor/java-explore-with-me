@@ -20,10 +20,14 @@ public class UpdateCompilationRequest {
     private String title;
 
     public boolean hasEvents() {
-        return !events.isEmpty();
+        return !(events == null || events.isEmpty());
     }
 
     public boolean hasTitle() {
         return !(title == null || title.isBlank());
+    }
+
+    public boolean hasPinned() {
+        return !(pinned == null);
     }
 }

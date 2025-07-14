@@ -16,7 +16,7 @@ public class NewCompilationDto {
 
     private List<Long> events;
 
-    private boolean pinned;
+    private Boolean pinned;
 
     @NotBlank
     @NotNull

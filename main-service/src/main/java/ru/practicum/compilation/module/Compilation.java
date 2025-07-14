@@ -23,13 +23,13 @@ public class Compilation {
 
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
-            name = "compilation_event",
+            name = "compilation_events",
             joinColumns = @JoinColumn(name = "compilation_id"),
             inverseJoinColumns = @JoinColumn(name = "event_id")
     )
     private List<Event> events;
 
-    private boolean pinned;
+    private Boolean pinned;
 
     private String title;
 

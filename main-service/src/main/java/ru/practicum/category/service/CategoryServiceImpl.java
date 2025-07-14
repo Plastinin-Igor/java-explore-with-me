@@ -11,6 +11,7 @@ import ru.practicum.category.dto.NewCategoryDto;
 import ru.practicum.category.mapper.CategoryMapper;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
+import ru.practicum.event.repository.EventRepository;
 import ru.practicum.exception.ConstraintViolationException;
 import ru.practicum.exception.NotFoundException;
 
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final EventRepository eventRepository;
 
     @Override
     @Transactional
@@ -39,7 +41,13 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void deleteCategory(Long catId) {
         Category category = getCatById(catId);
-        categoryRepository.delete(category);
+        if (eventRepository.countByCategory_Id(catId) == 0) {
+            categoryRepository.delete(category);
+        } else {
+            log.error("Категория привязана к событию. Удаление недопустимо.");
+            throw new ConstraintViolationException("Категория привязана к событию. Удаление недопустимо.");
+        }
+
     }
 
     @Override

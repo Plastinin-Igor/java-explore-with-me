@@ -22,7 +22,7 @@ public class CompilationDto {
     private Long id;
 
     @NotNull
-    private boolean pinned;
+    private Boolean pinned;
 
     @NotNull
     @NotBlank
