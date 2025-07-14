@@ -59,17 +59,26 @@ public class EventControllerPublic {
         requestCreateDto.setTimestamp(Timestamp.from(Instant.now()));
 
         //TODO Сделать вызов статистики !
-        //statClient.addRequest(requestCreateDto);
+        statClient.addRequest(requestCreateDto);
 
         return eventService.getEventsByFilterSearch(parameters);
     }
 
     @GetMapping("/events/{eventId}")
-    public EventFullDto getEventById(@PathVariable Long eventId) {
+    public EventFullDto getEventById(@PathVariable Long eventId, HttpServletRequest request) {
 
         log.info("Получен запрос GET: /events/{}", eventId);
 
         //TODO что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики
+
+        RequestCreateDto requestCreateDto = new RequestCreateDto();
+        requestCreateDto.setApp("main-service");
+        requestCreateDto.setIp(request.getRemoteAddr());
+        requestCreateDto.setUri(request.getRequestURI());
+        requestCreateDto.setTimestamp(Timestamp.from(Instant.now()));
+
+        //TODO Сделать вызов статистики !
+        statClient.addRequest(requestCreateDto);
 
         return eventService.getEventById(eventId);
     }
