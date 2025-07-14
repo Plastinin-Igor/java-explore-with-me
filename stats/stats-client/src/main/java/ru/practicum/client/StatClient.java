@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.practicum.RequestCreateDto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.web.reactive.function.client.WebClient;
@@ -24,15 +25,20 @@ public class StatClient {
     }
 
     public void addRequest(RequestCreateDto requestDto) {
-        webClient.post().uri("/hit").bodyValue(requestDto).retrieve().bodyToMono(Object.class).block();
+        webClient.post()
+                .uri("/hit")
+                .bodyValue(requestDto)
+                .retrieve()
+                .bodyToMono(Object.class)
+                .block();
     }
 
-    public ResponseEntity<List<RequestOutputDto>> getStatsRequest(String start,
-                                                                  String end,
+    public ResponseEntity<List<RequestOutputDto>> getStatsRequest(LocalDateTime start,
+                                                                  LocalDateTime end,
                                                                   List<String> uris,
                                                                   Boolean unique) {
 
-        ResponseEntity<List<RequestOutputDto>> response = webClient.get()
+        return webClient.get()
                 .uri(uriBuilder -> {
                     uriBuilder.path("/stats")
                             .queryParam("start", start)
@@ -46,7 +52,6 @@ public class StatClient {
                 .retrieve()
                 .toEntityList(RequestOutputDto.class)
                 .block();
-        return response;
     }
 
 }

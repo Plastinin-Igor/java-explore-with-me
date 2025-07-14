@@ -12,8 +12,6 @@ import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.model.EventSearchParameters;
 import ru.practicum.event.service.EventService;
 
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -51,35 +49,33 @@ public class EventControllerPublic {
                 .build();
         log.info("Получен запрос GET: /events c параметрами: {}", parameters);
 
+        List<EventShortDto> events = eventService.getEventsByFilterSearch(parameters);
 
+        log.info("Направлен запрос на сохранение данных в сервис статистики GET:/events.");
         RequestCreateDto requestCreateDto = new RequestCreateDto();
         requestCreateDto.setApp("main-service");
         requestCreateDto.setIp(request.getRemoteAddr());
         requestCreateDto.setUri(request.getRequestURI());
-        requestCreateDto.setTimestamp(Timestamp.from(Instant.now()));
-
-        //TODO Сделать вызов статистики !
+        requestCreateDto.setTimestamp(LocalDateTime.now());
         statClient.addRequest(requestCreateDto);
 
-        return eventService.getEventsByFilterSearch(parameters);
+        return events;
     }
 
     @GetMapping("/events/{eventId}")
     public EventFullDto getEventById(@PathVariable Long eventId, HttpServletRequest request) {
 
         log.info("Получен запрос GET: /events/{}", eventId);
+        EventFullDto event = eventService.getEventById(eventId);
 
-        //TODO что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики
-
+        log.info("Направлен запрос на сохранение данных в сервис статистики GET:/events/{}.", eventId);
         RequestCreateDto requestCreateDto = new RequestCreateDto();
         requestCreateDto.setApp("main-service");
         requestCreateDto.setIp(request.getRemoteAddr());
         requestCreateDto.setUri(request.getRequestURI());
-        requestCreateDto.setTimestamp(Timestamp.from(Instant.now()));
-
-        //TODO Сделать вызов статистики !
+        requestCreateDto.setTimestamp(LocalDateTime.now());
         statClient.addRequest(requestCreateDto);
 
-        return eventService.getEventById(eventId);
+        return event;
     }
 }

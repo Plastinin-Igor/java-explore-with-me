@@ -66,7 +66,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         if (event.getParticipantLimit() > 0
-            && requestRepository.countByEvent_IdAndStatus(eventId, StatusRequest.CONFIRMED) >= event.getParticipantLimit()) {
+                && requestRepository.countByEvent_IdAndStatus(eventId, StatusRequest.CONFIRMED) >= event.getParticipantLimit()) {
             log.error("У события с id {} достигнут лимит запросов на участие.", eventId);
             throw new DataConflictException("У события с id " + eventId + "  достигнут лимит запросов на участие.");
         }
@@ -97,9 +97,9 @@ public class RequestServiceImpl implements RequestService {
         if (!request.getRequester().getId().equals(userId)) {
             log.error("Запрос пользователя с id {} для участие в событии с id {} не найден в системе.", userId, requestId);
             throw new NotFoundException("Запрос пользователя с id " + userId + " для участие в событии с id "
-                                        + requestId + " не найден в системе.");
+                    + requestId + " не найден в системе.");
         }
-        request.setStatus(StatusRequest.REJECTED);
+        request.setStatus(StatusRequest.CANCELED);
         return RequestMapper.toRequestDto(requestRepository.save(request));
     }
 
@@ -110,7 +110,7 @@ public class RequestServiceImpl implements RequestService {
         if (!event.getInitiator().getId().equals(userId)) {
             log.error("Пользователь с id {} не является инициатором события с id {}.", userId, event);
             throw new DataConflictException("Пользователь с id " + userId
-                                            + " не является инициатором события с id " + event + ".");
+                    + " не является инициатором события с id " + event + ".");
         }
         return requestRepository.findByEvent_Id(eventId)
                 .stream()
@@ -137,21 +137,29 @@ public class RequestServiceImpl implements RequestService {
         List<ParticipationRequestDto> rejectedRequests = new ArrayList<>();
 
         // нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие
-        if (quantityConfirmedRequest < participantLimit) {
+        if (quantityConfirmedRequest >= participantLimit) {
             log.error("Достигнут лимит по заявкам на событие с id {}.", event);
-            throw new DataConflictException("Достигнут лимит по заявкам на событие с id " + event);
+            throw new DataConflictException("Достигнут лимит по заявкам на событие с id " + event.getId());
         }
 
-        // TODO Доделать согласование заявок !
-
-        for (Request request : requests) {
-            if (quantityConfirmedRequest < participantLimit) {
-                request.setStatus(StatusRequest.CONFIRMED);
-                confirmedRequests.add(RequestMapper.toRequestDto(request));
-                quantityConfirmedRequest++;
-            } else {
+        if (updateRequest.getStatus().equals(StatusRequest.CONFIRMED)) {
+            for (Request request : requests) {
+                if (quantityConfirmedRequest < participantLimit) {
+                    request.setStatus(StatusRequest.CONFIRMED);
+                    confirmedRequests.add(RequestMapper.toRequestDto(request));
+                    quantityConfirmedRequest++;
+                    requestRepository.save(request);
+                } else {
+                    request.setStatus(StatusRequest.REJECTED);
+                    rejectedRequests.add(RequestMapper.toRequestDto(request));
+                    requestRepository.save(request);
+                }
+            }
+        } else {
+            for (Request request : requests) {
                 request.setStatus(StatusRequest.REJECTED);
                 rejectedRequests.add(RequestMapper.toRequestDto(request));
+                requestRepository.save(request);
             }
         }
 

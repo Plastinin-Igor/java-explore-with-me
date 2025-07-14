@@ -70,5 +70,9 @@ public class UpdateEventUserRequest {
         return !(title == null || title.isBlank());
     }
 
+    public boolean hasPaid() {
+        return !(paid == null);
+    }
+
 
 }

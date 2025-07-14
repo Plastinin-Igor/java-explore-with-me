@@ -100,9 +100,12 @@ public final class EventMapper {
         }
 
         if (updateEvent.hasTitle()) {
-            event.setParticipantLimit(updateEvent.getParticipantLimit());
+            event.setTitle(updateEvent.getTitle());
         }
 
+        if (updateEvent.hasPaid()) {
+            event.setPaid(updateEvent.getPaid());
+        }
         return event;
     }
 

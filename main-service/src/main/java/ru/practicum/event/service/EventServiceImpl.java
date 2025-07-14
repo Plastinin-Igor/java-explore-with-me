@@ -6,8 +6,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.RequestOutputDto;
+import ru.practicum.client.StatClient;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.NewEventDto;
@@ -41,6 +44,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final LocationRepository locationRepository;
+    private final StatClient statClient;
 
     @Override
     public List<EventShortDto> getEventByUser(Long userId, int from, int size) {
@@ -72,7 +76,7 @@ public class EventServiceImpl implements EventService {
         if (event == null) {
             log.error("Событие с id {} и пользователем {} не найдено в системе.", eventId, userId);
             throw new NotFoundException("Событие с id " + eventId + " и пользователем "
-                                        + userId + " не найдено в системе");
+                    + userId + " не найдено в системе");
         }
 
         return EventMapper.toEventFullDto(event);
@@ -86,7 +90,7 @@ public class EventServiceImpl implements EventService {
 
         if (oldEvent.getState().equals(State.PUBLISHED)) {
             throw new DataConflictException("Изменить можно только отмененные события или события в состоянии " +
-                                            "ожидания модерации.");
+                    "ожидания модерации.");
         }
 
         if (!userId.equals(user.getId())) {
@@ -116,7 +120,7 @@ public class EventServiceImpl implements EventService {
         List<Specification<Event>> specifications = new ArrayList<>();
 
         if (params.getRangeStart() != null && params.getRangeEnd() != null
-            && params.getRangeStart().isAfter(params.getRangeEnd())) {
+                && params.getRangeStart().isAfter(params.getRangeEnd())) {
             log.error("Дата RangeStart не может быть меньше даты getRangeEnd.");
             throw new ParameterNotValidException("Даты", "Дата RangeStart не может быть меньше даты getRangeEnd.");
         }
@@ -159,12 +163,14 @@ public class EventServiceImpl implements EventService {
         Specification<Event> combinedSpecs = EventSpecifications.combine(specifications);
         Pageable paging = PageRequest.of(params.getFrom() / params.getSize(), params.getSize(), sort);
 
-        //TODO добавить вызов статистики
+        List<Event> events = eventRepository.findAll(combinedSpecs, paging);
 
-        return eventRepository.findAll(combinedSpecs, paging)
-                .stream()
-                .map(EventMapper::toEventShortDto)
-                .collect(Collectors.toList());
+        List<EventShortDto> results = new ArrayList<>();
+        for (Event event : events) {
+            results.add(EventMapper.toEventShortDto(eventViewsStats(event)));
+        }
+
+        return results;
     }
 
     @Override
@@ -245,13 +251,12 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFullDto getEventById(Long eventId) {
 
-        //TODO добавить вызов статистики
-
         Event event = getEvent(eventId);
         if (event.getState() != State.PUBLISHED) {
             log.error("Событие не опубликовано.");
             throw new NotFoundException("Событие не опубликовано.");
         }
+        event = eventViewsStats(event);
         return EventMapper.toEventFullDto(event);
     }
 
@@ -270,7 +275,7 @@ public class EventServiceImpl implements EventService {
 
         if (newEventDate.isBefore(hoursFromNow)) {
             String message = "Дата и время события не могут быть ранее, чем через "
-                             + noEarlierThanAnHour + " час(a) от текущего момента.";
+                    + noEarlierThanAnHour + " час(a) от текущего момента.";
             log.error(message);
             throw new ParameterNotValidException("EventDate", message);
         }
@@ -282,6 +287,27 @@ public class EventServiceImpl implements EventService {
             locationFind = locationRepository.save(location);
         }
         return locationFind;
+    }
+
+    private Event eventViewsStats(Event event) {
+        ResponseEntity<List<RequestOutputDto>> response = statClient.getStatsRequest(
+                LocalDateTime.now().minusYears(1),
+                LocalDateTime.now().plusDays(1),
+                List.of("/events/" + event.getId()),
+                true
+        );
+
+        List<RequestOutputDto> viewStatsDto = response.getBody();
+
+        if (viewStatsDto != null) {
+            event.setViews(viewStatsDto.size());
+        } else {
+            event.setViews(0);
+        }
+
+        Event savedEvent = eventRepository.save(event);
+        log.info("Сохранено событие с id {}, с подсчётом просмотров.", savedEvent.getId());
+        return savedEvent;
     }
 
 }
