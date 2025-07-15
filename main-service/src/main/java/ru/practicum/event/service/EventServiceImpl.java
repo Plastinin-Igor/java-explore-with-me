@@ -72,12 +72,9 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFullDto getEventByUserAndById(Long userId, Long eventId) {
         getUser(userId);
-        Event event = eventRepository.findByIdAndInitiator_Id(eventId, userId);
-        if (event == null) {
-            log.error("Событие с id {} и пользователем {} не найдено в системе.", eventId, userId);
-            throw new NotFoundException("Событие с id " + eventId + " и пользователем "
-                    + userId + " не найдено в системе");
-        }
+        Event event = eventRepository.findByIdAndInitiator_Id(eventId, userId).orElseThrow(() ->
+                new NotFoundException("Событие с id " + eventId + " и пользователем "
+                        + userId + " не найдено в системе"));
 
         return EventMapper.toEventFullDto(event);
     }
@@ -282,11 +279,8 @@ public class EventServiceImpl implements EventService {
     }
 
     private Location getLocation(Location location) {
-        Location locationFind = locationRepository.findByLatAndLon(location.getLat(), location.getLon());
-        if (locationFind == null) {
-            locationFind = locationRepository.save(location);
-        }
-        return locationFind;
+        return locationRepository.findByLatAndLon(location.getLat(), location.getLon())
+                .orElse(locationRepository.save(location));
     }
 
     private Event eventViewsStats(Event event) {

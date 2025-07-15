@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.State;
 import ru.practicum.event.repository.EventRepository;
-import ru.practicum.event.service.EventService;
 import ru.practicum.exception.DataConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.request.dto.EventRequestStatusUpdateRequest;
@@ -23,14 +22,13 @@ import ru.practicum.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class RequestServiceImpl implements RequestService {
-
-    private final EventService eventService;
 
     private final RequestRepository requestRepository;
     private final UserRepository userRepository;
@@ -50,7 +48,7 @@ public class RequestServiceImpl implements RequestService {
         Event event = getEvent(eventId);
         Request request = new Request();
 
-        if (getRequestByUserIdAndEventId(userId, eventId) != null) {
+        if (getRequestByUserIdAndEventId(userId, eventId).isPresent()) {
             log.error("Нельзя добавить повторный запрос.");
             throw new DataConflictException("Нельзя добавить повторный запрос.");
         }
@@ -148,18 +146,15 @@ public class RequestServiceImpl implements RequestService {
                     request.setStatus(StatusRequest.CONFIRMED);
                     confirmedRequests.add(RequestMapper.toRequestDto(request));
                     quantityConfirmedRequest++;
-                    requestRepository.save(request);
                 } else {
                     request.setStatus(StatusRequest.REJECTED);
                     rejectedRequests.add(RequestMapper.toRequestDto(request));
-                    requestRepository.save(request);
                 }
             }
         } else {
             for (Request request : requests) {
                 request.setStatus(StatusRequest.REJECTED);
                 rejectedRequests.add(RequestMapper.toRequestDto(request));
-                requestRepository.save(request);
             }
         }
 
@@ -167,6 +162,8 @@ public class RequestServiceImpl implements RequestService {
         event.setConfirmedRequests(quantityConfirmedRequest);
         eventRepository.save(event);
 
+        // Сохранить обновленные запросы
+        requestRepository.saveAll(requests);
 
         result.setConfirmedRequests(confirmedRequests);
         result.setRejectedRequests(rejectedRequests);
@@ -183,7 +180,7 @@ public class RequestServiceImpl implements RequestService {
                 new NotFoundException("Событие с id " + eventId + " не найдено в системе."));
     }
 
-    private Request getRequestByUserIdAndEventId(Long userId, Long eventId) {
+    private Optional<Request> getRequestByUserIdAndEventId(Long userId, Long eventId) {
         return requestRepository.findByRequester_IdAndEvent_Id(userId, eventId);
     }
 

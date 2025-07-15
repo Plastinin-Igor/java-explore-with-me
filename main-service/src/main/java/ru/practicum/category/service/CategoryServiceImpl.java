@@ -29,11 +29,9 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryDto addCategory(NewCategoryDto newCategoryDto) {
-        if (getCatByName(newCategoryDto.getName()) != null) {
-            log.error("Категория с именем {} уже существует в системе. Добавление недопустимо.", newCategoryDto.getName());
-            throw new ConstraintViolationException("Категория с именем " + newCategoryDto.getName()
-                                                   + " уже существует в системе. Добавление недопустимо.");
-        }
+        checkCatByName(newCategoryDto.getName(), "Категория с именем " + newCategoryDto.getName()
+                + " уже существует в системе. Добавление недопустимо.");
+
         Category category = categoryRepository.save(CategoryMapper.toCategoryFromNewCategory(newCategoryDto));
         return CategoryMapper.toCategoryDto(category);
     }
@@ -59,15 +57,10 @@ public class CategoryServiceImpl implements CategoryService {
         if (oldCategory.getName().equals(newCategoryDto.getName())) {
             return CategoryMapper.toCategoryDto(oldCategory);
         } else {
-            if (getCatByName(newCategoryDto.getName()) == null) {
-                return CategoryMapper.toCategoryDto(categoryRepository.save(newCategory));
-            } else {
-                log.error("Категория с именем {} уже существует в системе. Исправление недопустимо.", newCategory.getName());
-                throw new ConstraintViolationException("Категория с именем " + newCategoryDto.getName()
-                                                       + " уже существует в системе. Исправление недопустимо.");
-            }
+            checkCatByName(newCategoryDto.getName(), "Категория с именем " + newCategoryDto.getName()
+                    + " уже существует в системе. Исправление недопустимо.");
+            return CategoryMapper.toCategoryDto(categoryRepository.save(newCategory));
         }
-
     }
 
     @Override
@@ -90,7 +83,9 @@ public class CategoryServiceImpl implements CategoryService {
                 new NotFoundException("Категория с id: " + catId + " не найдена в системе"));
     }
 
-    private Category getCatByName(String catName) {
-        return categoryRepository.findByName(catName);
+    private void checkCatByName(String catName, String message) {
+        if (categoryRepository.findByName(catName).isPresent()) {
+            throw new ConstraintViolationException(message);
+        }
     }
 }
