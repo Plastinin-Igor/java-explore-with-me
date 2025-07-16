@@ -1,0 +1,170 @@
+package ru.practicum.comments.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import ru.practicum.comments.dto.CommentDto;
+import ru.practicum.comments.dto.LikeDto;
+import ru.practicum.comments.dto.NewCommentDto;
+import ru.practicum.comments.dto.UpdateCommentDto;
+import ru.practicum.comments.mapper.CommentMapper;
+import ru.practicum.comments.model.Comment;
+import ru.practicum.comments.model.StateComment;
+import ru.practicum.comments.repository.CommentRepository;
+import ru.practicum.event.model.Event;
+import ru.practicum.event.repository.EventRepository;
+import ru.practicum.exception.DataConflictException;
+import ru.practicum.exception.NotFoundException;
+import ru.practicum.user.model.User;
+import ru.practicum.user.repository.UserRepository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class CommentServiceImpl implements CommentService {
+
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
+    private final EventRepository eventRepository;
+
+    @Override
+    public CommentDto addComment(Long userId, NewCommentDto newCommentDto) {
+        Comment comment = new Comment();
+        User user = getUser(userId);
+        Event event = getEvent(newCommentDto.getEvent());
+
+        comment.setAuthor(user);
+        comment.setEvent(event);
+        comment.setCreated(LocalDateTime.now());
+        comment.setState(StateComment.PENDING);
+
+        return CommentMapper.toCommentDto(commentRepository.save(comment));
+    }
+
+    @Override
+    public CommentDto updateComment(Long userId, Long commentId, UpdateCommentDto updateCommentDto) {
+        User user = getUser(userId);
+        Comment oldComment = getComment(commentId);
+
+        if (!user.getId().equals(oldComment.getAuthor().getId())) {
+            log.error("Исправлять комментарйи может только автор.");
+            throw new DataConflictException("Исправлять комментарйи может только автор.");
+        }
+
+        Comment newComment = CommentMapper.toCommentFromUpdate(updateCommentDto, oldComment);
+
+        // Если комментарий уже опубликован, то допишем в текст дату изменения
+        if (oldComment.getState().equals(StateComment.PUBLISHED)) {
+            newComment.setText(newComment.getText() + "\nИзменено " + LocalDateTime.now());
+        }
+
+        return CommentMapper.toCommentDto(commentRepository.save(newComment));
+    }
+
+    @Override
+    public CommentDto changeStateComment(Long userId, Long commentId, StateComment stateComment, boolean adminMode) {
+        User user = getUser(userId);
+        Comment comment = getComment(commentId);
+
+        if (!adminMode && !user.getId().equals(userId)) {
+            log.error("Изменить статус комментария может автор или администратор системы.");
+            throw new DataConflictException("Изменить статус комментария может автор или администратор системы.");
+        }
+        comment.setState(stateComment);
+        return CommentMapper.toCommentDto(comment);
+    }
+
+    @Override
+    public CommentDto likeComment(Long userId, Long commentId, LikeDto likeDto) {
+
+        getUser(userId); // Лайки ставить, только зарегистрированный пользователь
+
+        Comment comment = getComment(commentId);
+        Long like = comment.getLikes();
+        Long dislike = comment.getDislikes();
+
+        if (likeDto.getLike() != null && likeDto.getLike()) {
+            like++;
+        }
+
+        if (likeDto.getDislike() != null && likeDto.getDislike()) {
+            dislike++;
+        }
+
+        comment.setLikes(like);
+        comment.setDislikes(dislike);
+
+        return CommentMapper.toCommentDto(comment);
+    }
+
+    @Override
+    public CommentDto getCommentById(Long commentId) {
+        return CommentMapper.toCommentDto(getComment(commentId));
+    }
+
+    @Override
+    public CommentDto getCommentByUserAndId(Long userId, Long commentId) {
+        Comment comment = commentRepository.findByIdAndAuthor_Id(commentId, userId)
+                .orElseThrow(() -> new NotFoundException("Комментарий с id "
+                                                         + commentId + " для пользователя с id " + userId
+                                                         + " не найден в системе."));
+        return CommentMapper.toCommentDto(comment);
+    }
+
+    @Override
+    public List<CommentDto> getCommentByEvent(Long eventId, int from, int size, String sortMode) {
+
+        Sort sort = Sort.unsorted();
+        switch (sortMode) {
+            case "CREATE" -> Sort.by("created");
+            case "LIKES" -> Sort.by("likes");
+            default -> Sort.by("id");
+        }
+        PageRequest page = PageRequest.of(from, size, sort.ascending());
+
+        return commentRepository.findByEvent_Id(eventId, page)
+                .stream()
+                .map(CommentMapper::toCommentDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CommentDto> getCommentByAuthor(Long userId, int from, int size, String sortMode) {
+
+        Sort sort = Sort.unsorted();
+        switch (sortMode) {
+            case "CREATE" -> Sort.by("created");
+            case "LIKES" -> Sort.by("likes");
+            default -> Sort.by("id");
+        }
+        PageRequest page = PageRequest.of(from, size, sort.ascending());
+
+        return commentRepository.findByAuthor_Id(userId, page)
+                .stream()
+                .map(CommentMapper::toCommentDto)
+                .collect(Collectors.toList());
+    }
+
+    private User getUser(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() ->
+                new NotFoundException("Пользователь с id " + userId + " не найден в системе."));
+    }
+
+    private Event getEvent(Long eventId) {
+        return eventRepository.findById(eventId).orElseThrow(() ->
+                new NotFoundException("Событие с id " + eventId + " не найдено в системе."));
+    }
+
+    private Comment getComment(Long commentId) {
+        return commentRepository.findById(commentId).orElseThrow(() ->
+                new NotFoundException("Комментарий с id " + commentId + " не найден в системе."));
+    }
+
+
+}
