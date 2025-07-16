@@ -3,7 +3,9 @@ package ru.practicum.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.RequestCreateDto;
 import ru.practicum.RequestDto;
 import ru.practicum.RequestOutputDto;
@@ -21,6 +23,7 @@ public class StatsController {
     private final StatsService statsService;
 
     @PostMapping("/hit")
+    @ResponseStatus(HttpStatus.CREATED)
     public RequestDto addRequest(@RequestBody RequestCreateDto requestCreateDto) {
         log.info("Получен запрос на добавление статистики");
         RequestDto requestDto = statsService.addRequest(requestCreateDto);
@@ -39,6 +42,10 @@ public class StatsController {
         }
         if (unique == null) {
             unique = false;
+        }
+
+        if (start.isAfter(end)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Дата начала не может быть позже даты окончания.");
         }
 
         log.info("Получен запрос получения статистики по посещениям с параметрами: start: {}; end: {}, uris: {}, unique: {}",
