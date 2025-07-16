@@ -35,14 +35,16 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentDto addComment(Long userId, NewCommentDto newCommentDto) {
-        Comment comment = new Comment();
         User user = getUser(userId);
         Event event = getEvent(newCommentDto.getEvent());
+        Comment comment = CommentMapper.toCommentFromNewtDto(newCommentDto);
 
         comment.setAuthor(user);
         comment.setEvent(event);
         comment.setCreated(LocalDateTime.now());
         comment.setState(StateComment.PENDING);
+        comment.setLikes(0L);
+        comment.setDislikes(0L);
 
         return CommentMapper.toCommentDto(commentRepository.save(comment));
     }
@@ -68,16 +70,23 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public CommentDto changeStateComment(Long userId, Long commentId, StateComment stateComment, boolean adminMode) {
-        User user = getUser(userId);
+    public CommentDto changeStateComment(Long userId, Long commentId, StateComment stateComment) {
         Comment comment = getComment(commentId);
 
-        if (!adminMode && !user.getId().equals(userId)) {
+        if (!comment.getAuthor().getId().equals(userId)) {
             log.error("Изменить статус комментария может автор или администратор системы.");
             throw new DataConflictException("Изменить статус комментария может автор или администратор системы.");
         }
         comment.setState(stateComment);
-        return CommentMapper.toCommentDto(comment);
+        return CommentMapper.toCommentDto(commentRepository.save(comment));
+    }
+
+    @Override
+    public CommentDto adminChangeStateComment(Long userId, Long commentId, StateComment stateComment) {
+        Comment comment = getComment(commentId);
+
+        comment.setState(stateComment);
+        return CommentMapper.toCommentDto(commentRepository.save(comment));
     }
 
     @Override
@@ -100,7 +109,7 @@ public class CommentServiceImpl implements CommentService {
         comment.setLikes(like);
         comment.setDislikes(dislike);
 
-        return CommentMapper.toCommentDto(comment);
+        return CommentMapper.toCommentDto(commentRepository.save(comment));
     }
 
     @Override
@@ -112,8 +121,8 @@ public class CommentServiceImpl implements CommentService {
     public CommentDto getCommentByUserAndId(Long userId, Long commentId) {
         Comment comment = commentRepository.findByIdAndAuthor_Id(commentId, userId)
                 .orElseThrow(() -> new NotFoundException("Комментарий с id "
-                                                         + commentId + " для пользователя с id " + userId
-                                                         + " не найден в системе."));
+                        + commentId + " для пользователя с id " + userId
+                        + " не найден в системе."));
         return CommentMapper.toCommentDto(comment);
     }
 

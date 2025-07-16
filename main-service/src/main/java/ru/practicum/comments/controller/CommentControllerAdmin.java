@@ -26,7 +26,7 @@ public class CommentControllerAdmin {
                                          @RequestParam(name = "stateComment") StateComment stateComment) {
         log.info("Получен запрос PATCH:/admin/{}/comments/{}/state на изменение состояния комментария с параметрами:" +
                  " stateComment={}.", userId, commentId, stateComment);
-        CommentDto commentDto = commentService.changeStateComment(userId, commentId, stateComment, true);
+        CommentDto commentDto = commentService.adminChangeStateComment(userId, commentId, stateComment);
         log.info("Статус успешно изменен: {}", commentDto);
         return commentDto;
     }

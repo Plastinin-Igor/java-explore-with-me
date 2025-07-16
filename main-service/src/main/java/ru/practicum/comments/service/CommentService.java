@@ -17,7 +17,10 @@ public interface CommentService {
     CommentDto updateComment(Long userId, Long commentId, UpdateCommentDto updateCommentDto);
 
     // Изменение состояния комментария
-    CommentDto changeStateComment(Long userId, Long commentId, StateComment stateComment, boolean adminMode);
+    CommentDto changeStateComment(Long userId, Long commentId, StateComment stateComment);
+
+    // Изменение администратором состояния комментария
+    CommentDto adminChangeStateComment(Long userId, Long commentId, StateComment stateComment);
 
     // Поставить лай/дизлайк комментарию
     CommentDto likeComment(Long userId, Long commentId, LikeDto likeDto);

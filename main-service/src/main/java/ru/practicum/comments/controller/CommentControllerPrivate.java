@@ -54,7 +54,7 @@ public class CommentControllerPrivate {
                                          @RequestParam(name = "stateComment") StateComment stateComment) {
         log.info("Получен запрос PATCH:/users/{}/comments/{}/state на изменение состояния комментария с параметрами:" +
                  " stateComment={}.", userId, commentId, stateComment);
-        CommentDto commentDto = commentService.changeStateComment(userId, commentId, stateComment, false);
+        CommentDto commentDto = commentService.changeStateComment(userId, commentId, stateComment);
         log.info("Статус успешно изменен: {}", commentDto);
         return commentDto;
     }
