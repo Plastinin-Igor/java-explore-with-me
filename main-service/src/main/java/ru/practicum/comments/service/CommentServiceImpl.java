@@ -118,7 +118,6 @@ public class CommentServiceImpl implements CommentService {
             comment.setLikes(like);
             comment.setDislikes(dislike);
 
-
             commentLike.setUser(user);
             commentLike.setComment(comment);
 
