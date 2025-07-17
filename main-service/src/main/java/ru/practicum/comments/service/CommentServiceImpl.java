@@ -11,7 +11,9 @@ import ru.practicum.comments.dto.NewCommentDto;
 import ru.practicum.comments.dto.UpdateCommentDto;
 import ru.practicum.comments.mapper.CommentMapper;
 import ru.practicum.comments.model.Comment;
+import ru.practicum.comments.model.CommentLike;
 import ru.practicum.comments.model.StateComment;
+import ru.practicum.comments.repository.CommentLikeRepository;
 import ru.practicum.comments.repository.CommentRepository;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.repository.EventRepository;
@@ -32,6 +34,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+    private final CommentLikeRepository likeRepository;
 
     @Override
     public CommentDto addComment(Long userId, NewCommentDto newCommentDto) {
@@ -92,22 +95,51 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public CommentDto likeComment(Long userId, Long commentId, LikeDto likeDto) {
 
-        getUser(userId); // Лайки ставить, только зарегистрированный пользователь
+        User user = getUser(userId); // Лайки ставит, только зарегистрированный пользователь
 
         Comment comment = getComment(commentId);
         Long like = comment.getLikes();
         Long dislike = comment.getDislikes();
 
-        if (likeDto.getLike() != null && likeDto.getLike()) {
-            like++;
-        }
+        CommentLike commentLike = likeRepository.findByComment_IdAndUser_Id(commentId, userId);
 
-        if (likeDto.getDislike() != null && likeDto.getDislike()) {
-            dislike++;
-        }
+        if (commentLike == null) {
+            commentLike = new CommentLike();
+            if (likeDto.getLike() != null && likeDto.getLike()) {
+                like++;
+                commentLike.setLikes(true);
+            }
 
-        comment.setLikes(like);
-        comment.setDislikes(dislike);
+            if (likeDto.getDislike() != null && likeDto.getDislike()) {
+                dislike++;
+                commentLike.setDislike(true);
+            }
+
+            comment.setLikes(like);
+            comment.setDislikes(dislike);
+
+
+            commentLike.setUser(user);
+            commentLike.setComment(comment);
+
+            likeRepository.save(commentLike);
+
+        } else {
+            if (likeDto.getLike() != null && likeDto.getLike() && commentLike.getLikes() != null
+                && !commentLike.getLikes()) {
+                like++;
+                commentLike.setLikes(true);
+            }
+            if (likeDto.getDislike() != null && likeDto.getDislike() && commentLike.getDislike() != null
+                && !commentLike.getDislike()) {
+                dislike++;
+                commentLike.setDislike(true);
+            }
+
+            comment.setLikes(like);
+            comment.setDislikes(dislike);
+            likeRepository.save(commentLike);
+        }
 
         return CommentMapper.toCommentDto(commentRepository.save(comment));
     }
@@ -121,8 +153,8 @@ public class CommentServiceImpl implements CommentService {
     public CommentDto getCommentByUserAndId(Long userId, Long commentId) {
         Comment comment = commentRepository.findByIdAndAuthor_Id(commentId, userId)
                 .orElseThrow(() -> new NotFoundException("Комментарий с id "
-                        + commentId + " для пользователя с id " + userId
-                        + " не найден в системе."));
+                                                         + commentId + " для пользователя с id " + userId
+                                                         + " не найден в системе."));
         return CommentMapper.toCommentDto(comment);
     }
 
