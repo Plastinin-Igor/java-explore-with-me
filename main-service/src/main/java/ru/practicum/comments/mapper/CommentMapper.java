@@ -4,21 +4,27 @@ import ru.practicum.comments.dto.CommentDto;
 import ru.practicum.comments.dto.NewCommentDto;
 import ru.practicum.comments.dto.UpdateCommentDto;
 import ru.practicum.comments.model.Comment;
+import ru.practicum.comments.model.StateComment;
 import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.Event;
 import ru.practicum.user.mapper.UserMapper;
+import ru.practicum.user.model.User;
+
+import java.time.LocalDateTime;
 
 public final class CommentMapper {
 
-    public static Comment toCommentFromNewtDto(NewCommentDto newCommentDto) {
+    public static Comment toCommentFromNewtDto(NewCommentDto newCommentDto, User user, Event event) {
         Comment comment = new Comment();
         comment.setText(newCommentDto.getText());
 
-        if (newCommentDto.getEvent() != null) {
-            Event event = new Event();
-            event.setId(newCommentDto.getEvent());
-            comment.setEvent(event);
-        }
+        comment.setCreated(LocalDateTime.now());
+        comment.setState(StateComment.PENDING);
+        comment.setLikes(0L);
+        comment.setDislikes(0L);
+        comment.setAuthor(user);
+        comment.setEvent(event);
+
         return comment;
     }
 

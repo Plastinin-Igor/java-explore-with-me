@@ -2,7 +2,6 @@ package ru.practicum.comments.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,7 +13,6 @@ import ru.practicum.comments.service.CommentService;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@Validated
 public class CommentControllerAdmin {
 
     private final CommentService commentService;

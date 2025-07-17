@@ -38,16 +38,8 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentDto addComment(Long userId, NewCommentDto newCommentDto) {
-        User user = getUser(userId);
-        Event event = getEvent(newCommentDto.getEvent());
-        Comment comment = CommentMapper.toCommentFromNewtDto(newCommentDto);
-
-        comment.setAuthor(user);
-        comment.setEvent(event);
-        comment.setCreated(LocalDateTime.now());
-        comment.setState(StateComment.PENDING);
-        comment.setLikes(0L);
-        comment.setDislikes(0L);
+        Comment comment = CommentMapper.toCommentFromNewtDto(newCommentDto,
+                getUser(userId), getEvent(newCommentDto.getEvent()));
 
         return CommentMapper.toCommentDto(commentRepository.save(comment));
     }
