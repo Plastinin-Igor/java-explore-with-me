@@ -108,6 +108,11 @@ java, spring-boot, spring-jpa, lombook, rest-api, sql, docker, postgresql, postm
   - DELETE /admin/compilations/{compId} - Удаление подборки 
   - PATCH /admin/compilations/{compId} - Обновить информацию о подборке
 
+#### stats
+
+- StatsController API для работы со статистикой посещений 
+  - POST /hit - Сохранение информации о том, что к эндпоинту был запрос 
+  - GET /stats - Получение статистики по посещениям. Обратите внимание: значение даты и времени нужно закодировать
 
 ### Описание базы данных
 ![er_main_service.png](main-service/src/main/resources/er_main_service.png)
