@@ -1,4 +1,7 @@
-# java-explore-with-me
-Template repository for ExploreWithMe project.
+# Explore with me  - микросервисное приложение «Исследуй со мной» - афиша мероприятий
+Java, Spring-boot, PostgreSQL, REST API, Docker, Postman, Lombok 
+## О проекте
+Приложение для публикации информации об интересных событиях и поиска компаний для участия в них.
 
-https://github.com/Plastinin-Igor/java-explore-with-me/pull/3
+
+
