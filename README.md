@@ -7,7 +7,7 @@ java, spring-boot, spring-jpa, lombook, rest-api, sql, docker, postgresql, postm
 
 Данное приложение — афиша. В этой афише можно предложить какое-либо событие от выставки до похода в кино и собрать компанию для участия в нём.
 
-![Image-explorer-with-me.png](main-service/src/main/resources/Image-explorer-with-me.png)
+![schema_user_interface.png](main-service/src/main/resources/schema_user_interface.png)
 
 Приложение состоит из двух микросервисов:
 - main-service - для бизнес-логики
